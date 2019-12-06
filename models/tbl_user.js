@@ -16,12 +16,46 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.STRING(56),
       allowNull: false
     },
+    password: {
+      type: DataTypes.STRING(256),
+      allowNull: false
+    },
+    email: {
+      type: DataTypes.STRING(256),
+      allowNull: true
+    },
     mobile_no: {
       type: DataTypes.INTEGER(11),
       allowNull: false
     },
-    address: {
-      type: DataTypes.TEXT,
+    is_varified: {
+      type: DataTypes.ENUM('yes','no'),
+      allowNull: false,
+      defaultValue: 'no'
+    },
+    is_address_added: {
+      type: DataTypes.ENUM('yes','no'),
+      allowNull: false,
+      defaultValue: 'no'
+    },
+    varification_id: {
+      type: DataTypes.STRING(256),
+      allowNull: true
+    },
+    fp_id: {
+      type: DataTypes.STRING(256),
+      allowNull: true
+    },
+    google_id: {
+      type: DataTypes.INTEGER(11),
+      allowNull: false
+    },
+    facebook_id: {
+      type: DataTypes.INTEGER(11),
+      allowNull: false
+    },
+    twitter_id: {
+      type: DataTypes.INTEGER(11),
       allowNull: false
     },
     is_deleted: {
