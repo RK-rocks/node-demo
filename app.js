@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const passportJWT = require('passport-jwt');
 const jwt = require('jsonwebtoken');
 const User = require('./models').tbl_user
+const Joi = require('@hapi/joi');
 // var controllers  = require('./controllers');
 // This will be our application entry. We'll setup our server here.
 const http = require('http');
@@ -50,6 +51,10 @@ app.use(bodyParser.urlencoded({ extended: true }));
 //Passport
 app.use(passport.initialize());
 
+app.use(cors({
+  exposedHeaders: ['Content-Type']
+}));
+
 // route.use('/',controllers)
 
 app.get('/user',(req,res) => {
@@ -57,7 +62,7 @@ app.get('/user',(req,res) => {
     User.create({
         first_name: 'janedoe',
         last_name: 'janedoe',
-        mobile_no:'87979979',
+        mobileNo:'87979979',
         address:'addressaddressaddressaddressaddressaddressaddress'
       })
       res.status(200).send({
@@ -74,36 +79,68 @@ const getUser = async obj => {
 //login route
 app.post('/login', async function(req, res, next) {
   try {
-    const { mobile_no, password } = req.body;
-    console.log(req.body)
-    if (mobile_no && password) {
-      try {
-        let user = await getUser({ mobile_no: mobile_no });
-        if (!user) {
-          res.status(401).json({ message: 'No such user found' });
+    const schema = Joi.object({
+      mobileNo:Joi.string().required(),
+      password: Joi.string()
+          .required(),
+    })
+    try {
+      const value = await schema.validateAsync({mobileNo:req.body.mobileNo,password:req.body.password});
+      console.log(value)
+      const { mobileNo, password } = req.body;
+      if (mobileNo && password) {
+        try {
+          let user = await getUser({ mobile_no: mobileNo });
+          if (!user) {
+            res.status(201).json({
+              message:'No such user found',
+              data:{},
+              status:0
+            })
+            return
+          }
+          if (user.password === password) {
+            // from now on we'll identify the user by the id and the id is the 
+            // only personalized value that goes into our token
+            let payload = { id: user.id };
+            let token = jwt.sign(payload, jwtOptions.secretOrKey);
+            const userData = {
+              email:user.email,
+              user_id:user.id,
+              token:token
+            }
+            res.status(200).json({
+              message:"Login successfully.",
+              data:{userData},
+              status:1
+            })
+          } else {
+            res.status(201).json({
+              message:"Password is incorrect",
+              data:{},
+              status:0
+            })
+          }
+        } catch (error) {
+          res.status(201).json({
+            message:error.message,
+            data:{},
+            status:0
+          })
         }
-        if (user.password === password) {
-          // from now on we'll identify the user by the id and the id is the 
-          // only personalized value that goes into our token
-          let payload = { id: user.id };
-          let token = jwt.sign(payload, jwtOptions.secretOrKey);
-          res.json({ msg: 'ok', token: token });
-        } else {
-          res.status(401).json({ msg: 'Password is incorrect' });
-        }
-      } catch (error) {
-        res.status(201).json({
-          message:error.message,
-          status:"402",
-          success:"0"
-        })
       }
+    } catch (error) {
+      res.status(201).json({
+        message:error.message,
+        data:{},
+        status:0
+      })
     }
   } catch (error) {
     res.status(201).json({
       message:error.message,
-      status:"402",
-      success:"0"
+      data:{},
+      status:0
     })
   }
 });
