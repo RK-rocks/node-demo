@@ -25,7 +25,7 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: true
     },
     mobile_no: {
-      type: DataTypes.INTEGER(11),
+      type: DataTypes.STRING(256),
       allowNull: false
     },
     is_varified: {
