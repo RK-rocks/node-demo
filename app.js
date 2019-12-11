@@ -6,6 +6,8 @@ const passportJWT = require('passport-jwt');
 const jwt = require('jsonwebtoken');
 const User = require('./models').tbl_user
 const Joi = require('@hapi/joi');
+const Sequelize = require('sequelize')
+const Op = Sequelize.Op;
 // var controllers  = require('./controllers');
 // This will be our application entry. We'll setup our server here.
 const http = require('http');
@@ -57,24 +59,119 @@ app.use(cors({
 
 // route.use('/',controllers)
 
-app.get('/user',(req,res) => {
-    console.log(User)
-    User.create({
-        first_name: 'janedoe',
-        last_name: 'janedoe',
-        mobileNo:'87979979',
-        address:'addressaddressaddressaddressaddressaddressaddress'
+app.post('/register',async function(req, res, next) {
+    try {
+      const schema = Joi.object({
+        first_name:Joi.string().required(),
+        last_name:Joi.string().required(),
+        mobileNo:Joi.string().required(),
+        password: Joi.string().required(),
+        email: Joi.string().required(),
       })
-      res.status(200).send({
-        message: 'user created successfully.',
-        })
+      try {
+        const value = await schema.validateAsync(
+          {
+            first_name:req.body.firstName,
+            last_name:req.body.lastName,
+            mobileNo:req.body.mobileNo,
+            password:req.body.password,
+            email:req.body.email,
+          }
+        );
+        
+        const { mobileNo, password } = req.body;
+        if (mobileNo && password) {
+          try {
+            let user = await getUser({ mobile_no: mobileNo,email:req.body.email });
+            if (user) {
+              res.status(201).json({
+                message:'user already exists',
+                data:{},
+                status:0
+              })
+              return
+            }
+            let first_name = req.body.firstName
+            let last_name = req.body.lastName
+            let email = req.body.email
+            let mobile_no = req.body.mobileNo
+            let password = req.body.password
+            try {
+              
+              let user = await createUser({ 
+                first_name: first_name,
+                last_name: last_name,
+                email: email,
+                mobile_no:mobile_no,
+                password:password,
+              });
+              
+              res.status(200).send({
+                message:'User created successfully.',
+                data:{},
+                status:1
+              })
+            } catch (error) {
+              res.status(201).json({
+                message:error.message,
+                data:{},
+                status:0
+              })
+            }
+          }catch(error) {
+            res.status(201).json({
+              message:error.message,
+              data:{},
+              status:0
+            })
+          }
+      } 
+    } catch (error) {
+      res.status(201).json({
+        message:error.message,
+        data:{},
+        status:0
+      })
+    }
+  }catch (error) {
+    res.status(201).json({
+      message:error.message,
+      data:{},
+      status:0
+    })
+  }
 })
 
 const getUser = async obj => {
   return await User.findOne({
-    where: obj,
+    where:[{
+      [Op.or]:{
+        mobile_no:{
+          [Op.eq] : obj.mobile_no
+        },
+        email : {
+          [Op.eq] : obj.email
+        }
+      }
+    }],
   });
 };
+
+const createUser=async obj =>{
+  console.log(obj);
+  first_name= obj.first_name
+  last_name= obj.last_name
+  email= obj.email
+  mobile_no=obj.mobile_no
+  password=obj.password
+  return await User.create({
+    first_name: first_name,
+    last_name: last_name,
+    email: email,
+    mobile_no:mobile_no,
+    password:password,
+  });
+}
 
 //login route
 app.post('/login', async function(req, res, next) {

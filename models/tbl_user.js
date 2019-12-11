@@ -47,16 +47,16 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: true
     },
     google_id: {
-      type: DataTypes.INTEGER(11),
-      allowNull: false
+      type: DataTypes.STRING(256),
+      allowNull: true
     },
     facebook_id: {
-      type: DataTypes.INTEGER(11),
-      allowNull: false
+      type: DataTypes.STRING(256),
+      allowNull: true
     },
     twitter_id: {
-      type: DataTypes.INTEGER(11),
-      allowNull: false
+      type: DataTypes.STRING(256),
+      allowNull: true
     },
     is_deleted: {
       type: DataTypes.ENUM('yes','no'),
