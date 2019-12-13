@@ -25,7 +25,7 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: true
     },
     mobile_no: {
-      type: DataTypes.STRING(256),
+      type: DataTypes.STRING(56),
       allowNull: false
     },
     is_varified: {
@@ -47,15 +47,15 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: true
     },
     google_id: {
-      type: DataTypes.STRING(256),
+      type: DataTypes.STRING(56),
       allowNull: true
     },
     facebook_id: {
-      type: DataTypes.STRING(256),
+      type: DataTypes.STRING(56),
       allowNull: true
     },
     twitter_id: {
-      type: DataTypes.STRING(256),
+      type: DataTypes.STRING(56),
       allowNull: true
     },
     is_deleted: {

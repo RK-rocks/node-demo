@@ -5,12 +5,17 @@ const bodyParser = require('body-parser');
 const passportJWT = require('passport-jwt');
 const jwt = require('jsonwebtoken');
 const User = require('./models').tbl_user
+const EmailTemplate = require('./models').tbl_email_templates
 const Joi = require('@hapi/joi');
 const Sequelize = require('sequelize')
 const Op = Sequelize.Op;
 // var controllers  = require('./controllers');
 // This will be our application entry. We'll setup our server here.
 const http = require('http');
+
+const sendMail = require('./controllers/commonController').sendMail
+
+var randtoken = require('rand-token');
 
 const passport      = require('passport');
 const pe            = require('parse-error');
@@ -142,6 +147,338 @@ app.post('/register',async function(req, res, next) {
   }
 })
 
+app.post('/forgotpassword',async function(req, res, next) {
+  try {
+    const schema = Joi.object({
+      email: Joi.string().required(),
+    })
+    const value = await schema.validateAsync({
+      email:req.body.email,
+    })
+    try {
+      // Generate a 16 character alpha-numeric token:
+      var token = randtoken.generate(116);
+      const { email } = req.body
+      try {
+        let user = await getUser({ email:req.body.email });
+        if (!user) {
+          res.status(201).json({
+            message:'user does not exists',
+            data:{},
+            status:0
+          })
+          return
+        }
+        try {
+          await User.update(
+            {
+              fp_id: token
+            },
+            {
+              where: {
+                email: {
+                  [Op.eq] : email
+                }
+              }}
+          )
+          try {
+            let subject = 'Forgot password'
+            try {
+              let html = await EmailTemplate.findOne({
+                where:{
+                  id : {
+                    [Op.eq]:1
+                  }
+                }
+              })
+              let link = 'http://localhost:4200/reset-password'+'/'+token
+              let emailBody = html.html.toString()
+              var body = emailBody.replace('{EMAIL}',email)
+              body = body.replace('{RESETLINNK}',link)
+              sendMailr = await sendMail(email,body,subject)
+              if(sendMailr){
+                res.status(200).send({
+                  message:'Reset password link is sent to this email address.',
+                  data:{},
+                  status:1
+                })
+              }else{
+                res.status(201).json({
+                  message:error.message,
+                  data:{},
+                  status:0
+                })
+              }
+            } catch (error) {
+              res.status(201).json({
+                message:error.message,
+                data:{},
+                status:0
+              })
+            }
+          } catch (error) {
+            res.status(201).json({
+              message:error.message,
+              data:{},
+              status:0
+            })  
+          }
+        } catch (error) {
+          res.status(201).json({
+            message:error.message,
+            data:{},
+            status:0
+          })  
+        }
+      } catch (error) {
+        res.status(201).json({
+          message:error.message,
+          data:{},
+          status:0
+        })
+      }
+    } catch (error) {
+      res.status(201).json({
+        message:error.message,
+        data:{},
+        status:0
+      })
+    }
+  } catch (error) {
+    res.status(201).json({
+      message:error.message,
+      data:{},
+      status:0
+    })
+  }
+})
+
+app.post('/checkfptoken',async function (req,res,next) {
+  try {
+    const schema = Joi.object({
+      token: Joi.string().required(),
+    })
+    const value = await schema.validateAsync({
+      token:req.body.token,
+    })
+    try {
+      let {token} = req.body
+      let userToken = await User.findOne({
+        where:{
+          fp_id : {
+            [Op.eq]:token
+          }
+        }
+      })
+      if(userToken){
+        res.status(200).json({
+          message:'Right token',
+          data:{},
+          status:1
+        })
+        return
+      }else{
+        res.status(201).json({
+          message:'wrong token',
+          data:{},
+          status:0
+        })
+        return
+      }
+    }catch(error){
+      res.status(201).json({
+        message:error.message,
+        data:{},
+        status:0
+      })
+    }
+  }catch(error){
+    res.status(201).json({
+      message:error.message,
+      data:{},
+      status:0
+    })
+  }
+})
+
+app.post('/resetpassword',async function (req,res,next){
+  try {
+    const schema = Joi.object({
+      token: Joi.string().required(),
+      newPassword : Joi.string().required()
+    })
+    const value = await schema.validateAsync({
+      token:req.body.token,
+      newPassword : req.body.newPassword
+    })
+    try {
+      let {token,newPassword} = req.body
+      let userToken = await User.findOne({
+        where:{
+          fp_id : {
+            [Op.eq]:token
+          }
+        }
+      })
+      if(!userToken){
+        res.status(201).json({
+          message:'token not found',
+          data:{},
+          status:0
+        })
+      }
+      try {
+        try {
+          let updPassword = await User.update(
+            {
+              password: newPassword,
+              fp_id:''
+            },
+            {
+              where: {
+                fp_id: {
+                  [Op.eq] : token
+                }
+              }}
+          )
+          if(updPassword){
+            res.status(200).json({
+              message:'Password updated succsessfully.',
+              data:{},
+              status:1
+            }) 
+          }else{
+            res.status(201).json({
+              message:'something wrong.',
+              data:{},
+              status:0
+            })
+          }
+        } catch (error) {
+          res.status(201).json({
+            message:error.message,
+            data:{},
+            status:0
+          }) 
+        }
+      } catch (error) {
+        res.status(201).json({
+          message:error.message,
+          data:{},
+          status:0
+        })
+      }
+    }catch(error){
+      res.status(201).json({
+        message:error.message,
+        data:{},
+        status:0
+      })
+    }
+  } catch (error) {
+    res.status(201).json({
+      message:error.message,
+      data:{},
+      status:0
+    })
+  }
+})
+
+app.post('/changepassword',async function (req,res,next){
+  try {
+    const schema = Joi.object({
+      user_id: Joi.number().required(),
+      newPassword : Joi.string().required(),
+      oldPassword: Joi.string().required(),
+    })
+    const value = await schema.validateAsync({
+      user_id:req.body.user_id,
+      newPassword : req.body.newPassword,
+      oldPassword : req.body.oldPassword
+    })
+    try {
+      let {user_id,newPassword,oldPassword} = req.body
+      let userData = await User.findOne({
+        where:{
+          id : {
+            [Op.eq]:user_id
+          }
+        }
+      })
+      if(!userData){
+        res.status(201).json({
+          message:'User not found',
+          data:{},
+          status:0
+        })
+      }
+      try {
+        console.log(userData.password)
+        console.log(oldPassword)
+        if(userData.password !== oldPassword){
+          res.status(201).json({
+            message:'You have enter wrong old password ',
+            data:{},
+            status:0
+          })
+          return
+        }
+        try {
+          let updPassword = await User.update(
+            {
+              password: newPassword,
+            },
+            {
+              where: {
+                id: {
+                  [Op.eq] : user_id
+                }
+              }}
+          )
+          if(updPassword){
+            res.status(200).json({
+              message:'Password updated succsessfully.',
+              data:{},
+              status:1
+            }) 
+            return
+          }else{
+            res.status(201).json({
+              message:'something wrong.',
+              data:{},
+              status:0
+            })
+          }
+        } catch (error) {
+          res.status(201).json({
+            message:error.message,
+            data:{},
+            status:0
+          }) 
+        }
+      } catch (error) {
+        res.status(201).json({
+          message:error.message,
+          data:{},
+          status:0
+        })
+      }
+    }catch(error){
+      res.status(201).json({
+        message:error.message,
+        data:{},
+        status:0
+      })
+    }
+  } catch (error) {
+    res.status(201).json({
+      message:error.message,
+      data:{},
+      status:0
+    })
+  }
+})
+
 const getUser = async obj => {
   return await User.findOne({
     where:[{
@@ -177,17 +514,17 @@ const createUser=async obj =>{
 app.post('/login', async function(req, res, next) {
   try {
     const schema = Joi.object({
-      mobileNo:Joi.string().required(),
+      email:Joi.string().required(),
       password: Joi.string()
           .required(),
     })
     try {
-      const value = await schema.validateAsync({mobileNo:req.body.mobileNo,password:req.body.password});
+      const value = await schema.validateAsync({email:req.body.email,password:req.body.password});
       console.log(value)
-      const { mobileNo, password } = req.body;
-      if (mobileNo && password) {
+      const { email, password } = req.body;
+      if (email && password) {
         try {
-          let user = await getUser({ mobile_no: mobileNo });
+          let user = await getUser({ email: email });
           if (!user) {
             res.status(201).json({
               message:'No such user found',
