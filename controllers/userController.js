@@ -573,6 +573,109 @@ router.post('/login', async function(req, res, next) {
   }
 });
 
+router.post('/getUserDataById', async function(req, res, next) {
+  try {
+    const schema = Joi.object({
+      id:Joi.number().required()
+    })
+    try {
+      const value = await schema.validateAsync({id:req.body.id});
+      console.log(value)
+      const { id } = req.body;
+      let userData = await User.findOne({
+        attributes:['first_name','last_name'],
+        where: {
+          id : {
+            [Op.eq]:id
+          }
+        }
+      });
+      if (!userData) {
+        res.status(200).json({
+          message:'No such user found',
+          data:{},
+          status:0
+        })
+        return
+      }
+      res.status(200).json({
+        message:'user found',
+        data:{userData},
+        status:1
+      })
+    }catch(error){
+      res.status(201).json({
+        message:error.message,
+        data:{},
+        status:0
+      })
+    }
+  }catch(error){
+    res.status(201).json({
+      message:error.message,
+      data:{},
+      status:0
+    })
+  }
+})
+
+router.post('/updateprofile', upload.array(),async function(req, res, next) {
+  try {
+    const schema = Joi.object({
+      first_name:Joi.string().required(),
+      last_name:Joi.string().required(),
+      user_id:Joi.number().required()
+    })
+    try {
+      const value = await schema.validateAsync({user_id:req.body.user_id,first_name:req.body.first_name,last_name:req.body.last_name});
+      const { first_name,last_name,user_id } = req.body;
+      let updProfile = await User.update(
+        {
+          first_name: first_name,
+          last_name:last_name
+        },
+        {
+          where: {
+            id: {
+              [Op.eq] : user_id
+            }
+          }}
+      )
+      if(updProfile){
+        res.status(200).json({
+          message:'Profile updated succsessfully.',
+          data:{},
+          status:1
+        }) 
+        return
+      }else{
+        res.status(201).json({
+          message:'something wrong.',
+          data:{},
+          status:0
+        })
+      }
+      res.status(200).json({
+        message:'user found',
+        data:{userData},
+        status:1
+      })
+    }catch(error){
+      res.status(201).json({
+        message:error.message,
+        data:{},
+        status:0
+      })
+    }
+  }catch(error){
+    res.status(201).json({
+      message:error.message,
+      data:{},
+      status:0
+    })
+  }
+})
+
 // protected route
 router.get('/protected', passport.authenticate('jwt', { session: false }), function(req, res) {
   res.json('Success! You can now see this without a token.');
