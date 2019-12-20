@@ -9,6 +9,7 @@ const passport      = require('passport');
 const pe            = require('parse-error');
 const passportJWT = require('passport-jwt');
 const jwt = require('jsonwebtoken');
+const path = require('path')
 let ExtractJwt = passportJWT.ExtractJwt;
 let JwtStrategy = passportJWT.Strategy;
 
@@ -63,8 +64,12 @@ app.use(bodyParser.json())
 // const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/', routes)
-app.set('port', process.env.PORT || 4066);
+app.set('port', process.env.PORT || 4065);
+// console.log(__dirname+'/uploads/original/')
+app.use(express.static(__dirname+'/uploads/original/'));
 
+// app.use(express.static(dir));
+// app.use(express.static('uploads'))
 // catch 404 and forward to error handler
 // note this is after all good routes and is not an error handler
 // to get a 404, it has to fall through to this route - no error involved

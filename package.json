@@ -30,6 +30,7 @@
     "parse-error": "^0.2.0",
     "passport": "^0.4.0",
     "passport-jwt": "^4.0.0",
+    "path": "^0.12.7",
     "rand-token": "^0.4.0",
     "sequelize": "^5.21.2",
     "sequelize-auto": "^0.4.29"

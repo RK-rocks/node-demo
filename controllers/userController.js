@@ -27,6 +27,7 @@ const EmailTemplate = require('../models/sequelizeModule').tbl_email_templates
 const Products = require('../models/sequelizeModule').tbl_product
 const Orders = require('../models/sequelizeModule').tbl_orders
 const Productcolors = require('../models/sequelizeModule').tbl_product_colors
+const ShippingAddresses = require('../models/sequelizeModule').tbl_shipping_address
 
 const path = require('path')
 var fs2 = require('fs');
@@ -752,6 +753,52 @@ router.post('/getorders', async function(req, res) {
         })
       }
     } catch (error) {
+      res.status(201).json({
+        message:error.message,
+        data:{},
+        status:0
+      })
+    }
+  } catch (error) {
+    res.status(201).json({
+      message:error.message,
+      data:{},
+      status:0
+    })
+  }
+})
+
+router.post('/getaddress', async function(req, res) {
+  try {
+    const schema = Joi.object({
+      user_id:Joi.number().required()
+    })
+    try {
+      const value = await schema.validateAsync({user_id:req.body.user_id});
+      const { user_id } = req.body;
+      let addressData = await ShippingAddresses.findAll({
+        attributes:['id','address','is_default','createdAt'],
+        where:[{
+              user_id:{
+                [Op.eq] : user_id
+              }
+            }],
+      })
+      if(addressData.length == 0){
+        res.status(201).json({
+          message:'You have not added any addresses',
+          data:{},
+          status:0
+        })
+        return
+      }else{
+        res.status(200).json({
+          message:'order founds',
+          data:{addressData},
+          status:1
+        })
+      }
+    }catch(error){
       res.status(201).json({
         message:error.message,
         data:{},
