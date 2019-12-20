@@ -7,7 +7,7 @@ module.exports = router;
 const passportJWT = require('passport-jwt');
 const jwt = require('jsonwebtoken');
 const multer  = require('multer')
-const upload = multer({ })
+const upload = multer()
 const joi  = require('joi')
 const constant  = require('../assets/constant')
 const passport      = require('passport');
@@ -22,6 +22,10 @@ jwtOptions.secretOrKey = 'wowwow';
 
 var User = require('../models/sequelizeModule').tbl_user
 const EmailTemplate = require('../models/sequelizeModule').tbl_email_templates
+const Products = require('../models/sequelizeModule').tbl_product
+const Orders = require('../models/sequelizeModule').tbl_orders
+const Productcolors = require('../models/sequelizeModule').tbl_product_colors
+
 const path = require('path')
 var fs2 = require('fs');
 var fs = require('fs-extra')
@@ -514,7 +518,7 @@ router.post('/login', async function(req, res, next) {
     })
     try {
       const value = await schema.validateAsync({email:req.body.email,password:req.body.password});
-      console.log(value)
+      console.log(req.body)
       const { email, password } = req.body;
       if (email && password) {
         try {
@@ -619,8 +623,9 @@ router.post('/getUserDataById', async function(req, res, next) {
   }
 })
 
-router.post('/updateprofile', upload.array(),async function(req, res, next) {
+router.post('/updateprofile', upload.none(),async function(req, res) {
   try {
+    console.log(req.body)
     const schema = Joi.object({
       first_name:Joi.string().required(),
       last_name:Joi.string().required(),
@@ -668,6 +673,69 @@ router.post('/updateprofile', upload.array(),async function(req, res, next) {
       })
     }
   }catch(error){
+    res.status(201).json({
+      message:error.message,
+      data:{},
+      status:0
+    })
+  }
+})
+
+router.post('/getorders', async function(req, res) {
+  try {
+    const schema = Joi.object({
+      user_id:Joi.number().required()
+    })
+    try {
+      const value = await schema.validateAsync({user_id:req.body.user_id});
+      const { user_id } = req.body;
+      let orderData = await Orders.findAll({
+        attributes:['id','order_id','total_item','createdAt'],
+        include:[
+          {
+            model:Products,
+            attributes:['name','price','features'],
+            where:[{
+              is_deleted:{
+                [Op.eq] : 'no'
+              }
+            }],
+            include:[
+              {
+                model:Productcolors,
+                attributes:['color'],
+                where:[{
+                  is_deleted:{
+                    [Op.eq] : 'no'
+                  }
+                }]
+              }
+            ]
+          }
+        ]
+      })
+      if(orderData.length == 0){
+        res.status(201).json({
+          message:'You have not ordered any items',
+          data:{},
+          status:0
+        })
+        return
+      }else{
+        res.status(200).json({
+          message:'order founds',
+          data:{orderData},
+          status:1
+        })
+      }
+    } catch (error) {
+      res.status(201).json({
+        message:error.message,
+        data:{},
+        status:0
+      })
+    }
+  } catch (error) {
     res.status(201).json({
       message:error.message,
       data:{},

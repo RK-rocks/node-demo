@@ -36,6 +36,10 @@ module.exports = function(sequelize, DataTypes) {
         key: 'id'
       }
     },
+    total_item: {
+      type: DataTypes.INTEGER(11),
+      allowNull: false
+    },
     createdAt: {
       type: DataTypes.DATE,
       allowNull: false,

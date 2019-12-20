@@ -59,7 +59,9 @@ if (Const_isDebug) {
 
 app.use(helmet())
 app.use(bodyParser.json())
-app.use(bodyParser.urlencoded({ extended: true }))
+// app.use(bodyParser.urlencoded({ extended: true }))
+// const bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/', routes)
 app.set('port', process.env.PORT || 4065);
 
@@ -76,7 +78,7 @@ app.use(function (req, res, next) {
  // production error handler
  // no stacktrace leaked to user
  app.use(function (err, req, res, next) {
-    res.status(500).json({ success: 0, data: {}, message: 'Server Error' })
+    res.status(500).json({ success: 0, data: {}, message: err.message })
     return;
  });
 
