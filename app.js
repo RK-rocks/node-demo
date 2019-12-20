@@ -63,7 +63,7 @@ app.use(bodyParser.json())
 // const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/', routes)
-app.set('port', process.env.PORT || 4065);
+app.set('port', process.env.PORT || 4066);
 
 // catch 404 and forward to error handler
 // note this is after all good routes and is not an error handler
@@ -78,7 +78,8 @@ app.use(function (req, res, next) {
  // production error handler
  // no stacktrace leaked to user
  app.use(function (err, req, res, next) {
-    res.status(500).json({ success: 0, data: {}, message: err.message })
+   console.log(err)
+   res.status(500).json({ success: 0, data: {}, message: err.message })
     return;
  });
 

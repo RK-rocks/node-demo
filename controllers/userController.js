@@ -3,6 +3,8 @@ var randtoken = require('rand-token')
 var express = require('express')
 var router = express.Router()
 module.exports = router;
+var Jimp = require("jimp")
+var fs = require('fs-extra')
 
 const passportJWT = require('passport-jwt');
 const jwt = require('jsonwebtoken');
@@ -40,27 +42,26 @@ var randtoken = require('rand-token');
 //For storingImages
 var storage = multer.diskStorage({
     destination: function (req, file, cb) {
-      cb(null, 'uploads/groupIcon')
+      cb(null, 'uploads/original')
     },
     filename: function (req, file, cb) {
         if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
             return cb(new Error('Only image files are allowed!'));
         }
-        //cb(null, Date.now() + randtoken.uid(16) + path.extname(file.originalname)) //Appending extension
+        // cb(null, Date.now() + randtoken.uid(16) + path.extname(file.originalname)) //Appending extension
         cb(null, file.originalname) //Appending extension
     }
 })
 
-var uploadGroupPhoto = multer({
+var uploadUserPhoto = multer({
 
-    dest: 'uploads/groupIcon',
-    limits: {
-        fieldNameSize: 100,
-        fileSize: Const_group_Upload_Size
-    },
-    storage: storage
-
-}).single('group_icon')
+  dest: 'uploads/original',
+  limits: {
+      fieldNameSize: 10000000,
+      fileSize: 60000000
+  },
+  storage: storage
+}).single('profile_pic')
 
 router.post('/register',async function(req, res, next) {
     try {
@@ -623,16 +624,16 @@ router.post('/getUserDataById', async function(req, res, next) {
   }
 })
 
-router.post('/updateprofile', upload.none(),async function(req, res) {
-  try {
-    console.log(req.body)
-    const schema = Joi.object({
-      first_name:Joi.string().required(),
-      last_name:Joi.string().required(),
-      user_id:Joi.number().required()
-    })
+router.post('/updateprofile', async function(req, res) {
+  uploadUserPhoto(req, res,function (err) {
+    console.log(err)
     try {
-      const value = await schema.validateAsync({user_id:req.body.user_id,first_name:req.body.first_name,last_name:req.body.last_name});
+      const schama = joi.object().keys({
+        first_name: joi.string().min(3).max(30).required(),
+        last_name: joi.string().required(),
+        user_id: joi.number().required(),
+    }).with('first_name',['user_id','last_name']);
+    joi.validate(req.body, schama, async function (err, value) {
       const { first_name,last_name,user_id } = req.body;
       let updProfile = await User.update(
         {
@@ -647,6 +648,33 @@ router.post('/updateprofile', upload.none(),async function(req, res) {
           }}
       )
       if(updProfile){
+        console.log(req.files)
+        if (typeof req['file'] !== 'undefined') {
+          Jimp.read(req.file.path,async function (err, img) {
+              try{
+                  if (err) throw err;
+                  img.resize(256, 256)
+                  .quality(60)
+                  .write("uploads/original/" + user_id + "/" + "thumb_" + req.file.originalname);
+                  // save
+                  fs.move('uploads/original/' + req.file.originalname, 'uploads/original/' + user_id + '/' + req.file.originalname, function (err) {
+                  if (err) throw err;
+                  })
+              }catch (e) {
+                  res.status(500).json({
+                      success: 0,
+                      message: e.message,
+                      data: {}
+                  })   
+              }
+          })
+
+          //update profile image
+          var updProfileImage = await User.update(
+              {profile_image: user_id + "/" + "thumb_" + req.file.originalname},
+              {returning: true,where: {id: user_id}},
+          )
+      }
         res.status(200).json({
           message:'Profile updated succsessfully.',
           data:{},
@@ -665,6 +693,7 @@ router.post('/updateprofile', upload.none(),async function(req, res) {
         data:{userData},
         status:1
       })
+    })
     }catch(error){
       res.status(201).json({
         message:error.message,
@@ -672,13 +701,7 @@ router.post('/updateprofile', upload.none(),async function(req, res) {
         status:0
       })
     }
-  }catch(error){
-    res.status(201).json({
-      message:error.message,
-      data:{},
-      status:0
-    })
-  }
+  })
 })
 
 router.post('/getorders', async function(req, res) {
