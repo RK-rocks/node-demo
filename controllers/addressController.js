@@ -28,6 +28,7 @@ router.post('/getaddress', async function(req, res) {
                   [Op.eq] : user_id
                 }
               }],
+          order:[['id','desc']]    
         })
         if(addressData.length == 0){
           res.status(201).json({
@@ -89,8 +90,8 @@ router.post('/delete', async function(req, res) {
                     let addressData = await ShippingAddresses.findAll({
                         attributes:['id'],
                       })
-                    console.log(addressData[1].dataValues.id)
-                    if(addressData.length>1){
+                    // console.log(addressData[1].dataValues.id)
+                    if(addressData.length>1 && addressData[0].dataValues.is_default == 'yes'){
                         let new_id = addressData[1].dataValues.id
                         console.log(new_id)
                         //update profile image
@@ -152,3 +153,61 @@ router.post('/delete', async function(req, res) {
         })
     }
 })
+
+//add shipping address
+router.post('/addaddress', async function(req, res) {
+  try {
+    const schema = Joi.object({
+      user_id:Joi.number().required(),
+      address:Joi.string().required(),
+    })
+    try {
+      const value = await schema.validateAsync({user_id:req.body.user_id,address:req.body.address});
+      const { user_id,address } = req.body;
+      let addressData = await ShippingAddresses.findAll({
+        attributes:['id','address','is_default','createdAt'],
+        where:[{
+              user_id:{
+                [Op.eq] : user_id
+              }
+            }],
+      })
+      let default_address
+      if(addressData.length == 0){
+        default_address = 'yes'
+      }else{
+        default_address = 'no'
+      }
+      let addAddress = await ShippingAddresses.create({ 
+        address:address,
+        default_address:default_address,
+        user_id:user_id
+      });
+      if(addAddress){
+        res.status(200).json({
+          message:'Address added successfully.',
+          data:{},
+          status:1
+        })
+      }else{
+        res.status(201).json({
+          message:'Something wrong',
+          data:{},
+          status:0
+        })
+      }
+    } catch (error) {
+      res.status(201).json({
+        message:error.message,
+        data:{},
+        status:0
+      })
+    }
+  } catch (error) {
+    res.status(201).json({
+      message:error.message,
+      data:{},
+      status:0
+    })
+  }
+}) 
