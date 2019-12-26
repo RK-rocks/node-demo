@@ -60,6 +60,53 @@ router.post('/getaddress', async function(req, res) {
     }
 })
 
+router.post('/getaddressdetailsbyid', async function(req, res) {
+  try {
+    const schema = Joi.object({
+      address_id:Joi.number().required()
+    })
+    try {
+      const value = await schema.validateAsync({address_id:req.body.address_id});
+      const { address_id } = req.body;
+      let addressData = await ShippingAddresses.findOne({
+        attributes:['id','address','is_default','createdAt'],
+        where:[{
+              id:{
+                [Op.eq] : address_id
+              }
+            }],
+        order:[['id','desc']]    
+      })
+      if(addressData.length == 0){
+        res.status(201).json({
+          message:'You have not added any addresses',
+          data:{},
+          status:0
+        })
+        return
+      }else{
+        res.status(200).json({
+          message:'address found',
+          data:{addressData},
+          status:1
+        })
+      }
+    }catch(error){
+      res.status(201).json({
+        message:error.message,
+        data:{},
+        status:0
+      })
+    }
+  } catch (error) {
+    res.status(201).json({
+      message:error.message,
+      data:{},
+      status:0
+    })
+  }
+})
+
 //deletes address and set next address to default address
 router.post('/delete', async function(req, res) {
     try {
@@ -211,3 +258,63 @@ router.post('/addaddress', async function(req, res) {
     })
   }
 }) 
+
+//edit address 
+router.post('/editaddress', async function(req, res) {
+  try {
+    const schema = Joi.object({
+      user_id:Joi.number().required(),
+      address:Joi.string().required(),
+      address_id:Joi.number().required()
+    })
+    try {
+      const value = await schema.validateAsync({user_id:req.body.user_id,address_id:req.body.address_id,address:req.body.address});
+      const { user_id,address,address_id } = req.body;
+
+      try {
+        let updData = await ShippingAddresses.update(
+          {
+            address: address
+          },
+          {
+            where: {
+              id: {
+                [Op.eq] : address_id
+              }
+            }}
+        )
+        if(updData){
+          res.status(200).json({
+            message:'Address updated successfully.',
+            data:{},
+            status:1
+          })
+        }else{
+          res.status(201).json({
+            message:'Something wrong',
+            data:{},
+            status:0
+          })
+        }
+      } catch (error) {
+        res.status(201).json({
+          message:error.message,
+          data:{},
+          status:0
+        })
+      }
+    } catch (error) {
+      res.status(201).json({
+        message:error.message,
+        data:{},
+        status:0
+      })
+    }
+  } catch (error) {
+    res.status(201).json({
+      message:error.message,
+      data:{},
+      status:0
+    })
+  }
+})
