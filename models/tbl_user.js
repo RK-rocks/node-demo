@@ -10,15 +10,15 @@ module.exports = function(sequelize, DataTypes) {
     },
     first_name: {
       type: DataTypes.STRING(56),
-      allowNull: false
+      allowNull: true
     },
     last_name: {
       type: DataTypes.STRING(56),
-      allowNull: false
+      allowNull: true
     },
     password: {
       type: DataTypes.STRING(256),
-      allowNull: false
+      allowNull: true
     },
     email: {
       type: DataTypes.STRING(256),
@@ -30,9 +30,14 @@ module.exports = function(sequelize, DataTypes) {
     },
     mobile_no: {
       type: DataTypes.STRING(56),
-      allowNull: false
+      allowNull: true
     },
     is_varified: {
+      type: DataTypes.ENUM('yes','no'),
+      allowNull: false,
+      defaultValue: 'no'
+    },
+    is_subscribed: {
       type: DataTypes.ENUM('yes','no'),
       allowNull: false,
       defaultValue: 'no'
@@ -46,20 +51,25 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.STRING(256),
       allowNull: true
     },
+    login_with: {
+      type: DataTypes.ENUM('0','1','2','3'),
+      allowNull: false,
+      defaultValue: '0'
+    },
     fp_id: {
       type: DataTypes.STRING(256),
       allowNull: true
     },
     google_id: {
-      type: DataTypes.STRING(56),
+      type: DataTypes.STRING(256),
       allowNull: true
     },
     facebook_id: {
-      type: DataTypes.STRING(56),
+      type: DataTypes.STRING(256),
       allowNull: true
     },
     twitter_id: {
-      type: DataTypes.STRING(56),
+      type: DataTypes.STRING(256),
       allowNull: true
     },
     is_deleted: {

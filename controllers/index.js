@@ -6,6 +6,7 @@ module.exports = router;
 const userController = require('./userController');
 const orderController = require('./orderController')
 const addressController = require('./addressController')
+const productController = require('./productController')
 const joi  = require('joi')
 
 var UserModel = require('../models/sequelizeModule').tbl_user
@@ -108,3 +109,4 @@ async function validateAPIKeyAndTokenForUser(req, res, next){
 router.use('/user',userController)
 router.use('/order',orderController)
 router.use('/address',addressController)
+router.use('/product',productController)

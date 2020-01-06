@@ -68,6 +68,9 @@ app.set('port', process.env.PORT || 4065);
 // console.log(__dirname+'/uploads/original/')
 app.use(express.static(__dirname+'/uploads/original/'));
 
+app.use('/pdf', express.static(__dirname + '/uploads/pdf'));
+app.use('/users', express.static(__dirname + '/uploads/original'));
+
 // app.use(express.static(dir));
 // app.use(express.static('uploads'))
 // catch 404 and forward to error handler

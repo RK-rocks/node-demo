@@ -23,7 +23,7 @@ jwtOptions.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
 jwtOptions.secretOrKey = 'wowwow';
 
 var User = require('../models/sequelizeModule').tbl_user
-const EmailTemplate = require('../models/sequelizeModule').tbl_email_templates
+const EmailTemplate = require('../models/sequelizeModule').tbl_email_template
 const Products = require('../models/sequelizeModule').tbl_product
 const Orders = require('../models/sequelizeModule').tbl_orders
 const Productcolors = require('../models/sequelizeModule').tbl_product_colors
@@ -147,6 +147,128 @@ router.post('/register',async function(req, res, next) {
   }
 })
 
+router.post('/loginwithsocialmedia',async function(req, res, next) {
+  try {
+    const schema = Joi.object({
+      id:Joi.string().required(),
+      login_with:Joi.string().required(),
+      email:Joi.string().required(),
+    })
+    try {
+      const value = await schema.validateAsync(
+        {
+          id:req.body.id,
+          login_with:req.body.login_with,
+          email:req.body.email
+        }
+      );
+      console.log(req.body)
+      const { id,email,login_with } = req.body;
+      if (id) {
+        try {
+          let user = await getUser({ email: email });
+          if(!user){
+            let user = await User.create({ 
+              email: email,
+              login_with:login_with
+            });
+            var is_subscribed = user.is_subscribed
+          }
+          
+            // from now on we'll identify the user by the id and the id is the 
+            // only personalized value that goes into our token
+            let payload = { id: id };
+            let token = jwt.sign(payload, jwtOptions.secretOrKey);
+            const userData = {
+              email:email,
+              user_id:id,
+              token:token,
+              is_subscribed:is_subscribed
+            }
+
+            try {
+              let column_name
+              switch (login_with) {
+                case '1':
+                  await User.update(
+                    {
+                      google_id: id
+                    },
+                    {
+                      where: {
+                        email: {
+                          [Op.eq] : email
+                        }
+                      }}
+                  )
+                  break;
+                case '2':
+                  await User.update(
+                    {
+                      facebook_id: id
+                    },
+                    {
+                      where: {
+                        email: {
+                          [Op.eq] : email
+                        }
+                      }}
+                  )
+                  break;
+
+                case '3':
+                  await User.update(
+                    {
+                      twitter_id: id
+                    },
+                    {
+                      where: {
+                        email: {
+                          [Op.eq] : email
+                        }
+                      }}
+                  )
+                  break;
+              
+                default:
+                  break;
+              }
+              res.status(200).json({
+                message:"Login successfully.",
+                data:{userData},
+                status:1
+              })
+            } catch (error) {
+              res.status(201).json({
+                message:error.message,
+                data:{},
+                status:0
+              })    
+            }
+        } catch (error) {
+          res.status(201).json({
+            message:error.message,
+            data:{},
+            status:0
+          })
+        }
+      }
+    } catch (error) {
+      res.status(201).json({
+        message:error.message,
+        data:{},
+        status:0
+      })
+    }
+  } catch (error) {
+    res.status(201).json({
+      message:error.message,
+      data:{},
+      status:0
+    })
+  }
+})
+
 router.post('/forgotpassword',async function(req, res, next) {
   try {
     const schema = Joi.object({
@@ -160,7 +282,13 @@ router.post('/forgotpassword',async function(req, res, next) {
       var token = randtoken.generate(116);
       const { email } = req.body
       try {
-        let user = await getUser({ email:req.body.email });
+        let user = await User.findOne({ 
+            where:[{
+              email:{
+                  [Op.eq] : req.body.email
+                }
+            }],
+        });
         if (!user) {
           res.status(201).json({
             message:'user does not exists',
@@ -184,6 +312,8 @@ router.post('/forgotpassword',async function(req, res, next) {
           try {
             let subject = 'Forgot password'
             try {
+              console.log("ljbjbjkbb")
+              console.log(EmailTemplate)
               let html = await EmailTemplate.findOne({
                 where:{
                   id : {
@@ -191,11 +321,12 @@ router.post('/forgotpassword',async function(req, res, next) {
                   }
                 }
               })
+              console.log("jbjbjbkjbkj")
               let link = 'http://localhost:4200/reset-password'+'/'+token
               let emailBody = html.html.toString()
               var body = emailBody.replace('{EMAIL}',email)
               body = body.replace('{RESETLINNK}',link)
-              sendMailr = await sendMail(email,body,subject)
+              const sendMailr = await sendMail(email,body,subject)
               if(sendMailr){
                 res.status(200).send({
                   message:'Reset password link is sent to this email address.',
@@ -496,17 +627,9 @@ const getUser = async obj => {
 
 const createUser=async obj =>{
   console.log(obj);
-  first_name= obj.first_name
-  last_name= obj.last_name
   email= obj.email
-  mobile_no=obj.mobile_no
-  password=obj.password
   return await User.create({
-    first_name: first_name,
-    last_name: last_name,
-    email: email,
-    mobile_no:mobile_no,
-    password:password,
+    email: email
   });
 }
 
@@ -541,7 +664,8 @@ router.post('/login', async function(req, res, next) {
             const userData = {
               email:user.email,
               user_id:user.id,
-              token:token
+              token:token,
+              is_subscribed:user.is_subscribed
             }
             res.status(200).json({
               message:"Login successfully.",
@@ -550,7 +674,7 @@ router.post('/login', async function(req, res, next) {
             })
           } else {
             res.status(201).json({
-              message:"Password is incorrect",
+              message:"User email or password is incorrect.",
               data:{},
               status:0
             })
@@ -589,7 +713,7 @@ router.post('/getUserDataById', async function(req, res, next) {
       console.log(value)
       const { id } = req.body;
       let userData = await User.findOne({
-        attributes:['first_name','last_name'],
+        attributes:['first_name','last_name','id','profile_image'],
         where: {
           id : {
             [Op.eq]:id
@@ -609,6 +733,72 @@ router.post('/getUserDataById', async function(req, res, next) {
         data:{userData},
         status:1
       })
+    }catch(error){
+      res.status(201).json({
+        message:error.message,
+        data:{},
+        status:0
+      })
+    }
+  }catch(error){
+    res.status(201).json({
+      message:error.message,
+      data:{},
+      status:0
+    })
+  }
+})
+
+router.post('/subscribemanage', async function(req, res, next) {
+  try {
+    const schema = Joi.object({
+      id:Joi.number().required(),
+      subscribe:Joi.string().required()
+    })
+    try {
+      const value = await schema.validateAsync({id:req.body.id,subscribe:req.body.subscribe});
+      console.log(value)
+      const { id,subscribe } = req.body;
+      let userData = await User.findOne({
+        attributes:['first_name','last_name','id','profile_image'],
+        where: {
+          id : {
+            [Op.eq]:id
+          }
+        }
+      });
+      if (!userData) {
+        res.status(200).json({
+          message:'No such user found',
+          data:{},
+          status:0
+        })
+        return
+      }
+      let updProfile = await User.update(
+        {
+          is_subscribed:subscribe
+        },
+        {
+          where: {
+            id: {
+              [Op.eq] : id
+            }
+          }}
+      )
+      if(updProfile){
+        res.status(200).json({
+          message:'change status succsessfully.',
+          data:{},
+          status:1
+        })
+      }else{
+        res.status(201).json({
+          message:'something wrong.',
+          data:{},
+          status:0
+        })
+      }
     }catch(error){
       res.status(201).json({
         message:error.message,
