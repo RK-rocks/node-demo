@@ -9,8 +9,8 @@ module.exports = function(sequelize, DataTypes) {
       autoIncrement: true
     },
     name: {
-      type: DataTypes.INTEGER(11),
-      allowNull: false
+      type: DataTypes.STRING(56),
+      allowNull: true
     },
     is_deleted: {
       type: DataTypes.ENUM('yes','no'),

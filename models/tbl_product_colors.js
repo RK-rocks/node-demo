@@ -12,6 +12,10 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.STRING(56),
       allowNull: true
     },
+    color_id: {
+      type: DataTypes.INTEGER(11),
+      allowNull: false
+    },
     product_id: {
       type: DataTypes.INTEGER(11),
       allowNull: false,
