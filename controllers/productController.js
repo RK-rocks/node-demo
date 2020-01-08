@@ -15,30 +15,54 @@ const Joi = require('@hapi/joi');
 
 router.post('/getproducts', async function(req, res) {
   try {
-    const schema = Joi.object({
-      user_id:Joi.number().required()
-    })
+    const schema = Joi.object().keys({
+      user_id:Joi.number().required(),
+    }).with('group_name',['user_ids']).without('category_id','color_id');
     try {
       const value = await schema.validateAsync({user_id:req.body.user_id});
-      const { user_id } = req.body;
+      const { user_id,category_id,color_id,sort_by } = req.body;
+      
+      // if category id added then category 
+      // filter applied
+      let where = []
+      where.push({
+        is_deleted:{
+          [Op.eq] : 'no'
+        }
+      })
+      if(category_id){
+        where.push({
+          category_id:category_id
+        })
+      }
+      let colorsWhereClause = []
+      colorsWhereClause.push({
+        is_deleted:{
+          [Op.eq] : 'no'
+        }
+      })
+
+      // if color id added then color 
+      // filter applied
+      if(color_id){
+        colorsWhereClause.push({
+          color_id:color_id
+        })
+      }
+      if(sort_by){
+        var order =  [['price', sort_by]]
+      }
       let productData = await Products.findAll({
         attributes:['name','price','features','image'],
-        where:[{
-          is_deleted:{
-            [Op.eq] : 'no'
-          }
-        }],
+        where:where,
         include:[
           {
             model:Productcolors,
-            attributes:['color'],
-            where:[{
-              is_deleted:{
-                [Op.eq] : 'no'
-              }
-            }]
+            attributes:['id','color'],
+            where:colorsWhereClause
           }
-        ]
+        ],
+        order:order
       })
       if(productData.length == 0){
         res.status(200).json({
@@ -79,7 +103,7 @@ router.post('/getproductcolor', async function(req, res) {
       const value = await schema.validateAsync({user_id:req.body.user_id});
       const { user_id } = req.body;
       let colorData = await Colors.findAll({
-        attributes:['color'],
+        attributes:['id','color'],
         where:[{
           is_deleted:{
             [Op.eq] : 'no'
@@ -126,7 +150,7 @@ router.post('/getproductcategories', async function(req, res) {
       const value = await schema.validateAsync({user_id:req.body.user_id});
       const { user_id } = req.body;
       let categoryData = await Category.findAll({
-        attributes:['name'],
+        attributes:['id','name'],
         where:[{
           is_deleted:{
             [Op.eq] : 'no'
