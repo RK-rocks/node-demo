@@ -7,6 +7,7 @@ const constant  = require('../assets/constant')
 const Products = require('../models/sequelizeModule').tbl_product
 const Orders = require('../models/sequelizeModule').tbl_orders
 const Productcolors = require('../models/sequelizeModule').tbl_product_colors
+const ProductImages = require('../models/sequelizeModule').tbl_product_images
 const Colors = require('../models/sequelizeModule').tbl_color
 const Category = require('../models/sequelizeModule').tbl_category
 const Sequelize = require('sequelize')
@@ -53,7 +54,7 @@ router.post('/getproducts', async function(req, res) {
         var order =  [['price', sort_by]]
       }
       let productData = await Products.findAll({
-        attributes:['name','price','features','image'],
+        attributes:['id','name','price','features','image'],
         where:where,
         include:[
           {
@@ -63,6 +64,68 @@ router.post('/getproducts', async function(req, res) {
           }
         ],
         order:order
+      })
+      if(productData.length == 0){
+        res.status(200).json({
+          message:'Products not found',
+          data:{},
+          status:0
+        })
+        return
+      }else{
+        res.status(200).json({
+          message:'Products founds',
+          data:{productData},
+          status:1
+        })
+      }
+    } catch (error) {
+      res.status(201).json({
+        message:error.message,
+        data:{},
+        status:0
+      })
+    }
+  } catch (error) {
+    res.status(201).json({
+      message:error.message,
+      data:{},
+      status:0
+    })
+  }
+})
+
+router.post('/getproductdetailbyid', async function(req, res) {
+  try {
+    const schema = Joi.object().keys({
+      user_id:Joi.number().required(),
+    }).with('',['user_ids']).without('category_id','color_id');
+    try {
+      const value = await schema.validateAsync({user_id:req.body.user_id});
+      const { product_id } = req.body;
+      
+      let productData = await Products.findOne({
+        attributes:['id','name','price','features','image'],
+        where:[{
+          is_deleted:{
+            [Op.eq] : 'no'
+          },
+          id : {
+            [Op.eq] : product_id
+          }
+        }],
+        include:[
+          {
+            model:ProductImages,
+            attributes:['id','image'],
+            where:[{
+              is_deleted:{
+                [Op.eq] : 'no'
+              }
+            }],
+            required:false
+          }
+        ],
       })
       if(productData.length == 0){
         res.status(200).json({

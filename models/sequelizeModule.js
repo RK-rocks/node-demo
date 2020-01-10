@@ -9,7 +9,7 @@ var tbl_product_colors = require('../models/tbl_product_colors')
 var tbl_color = require('../models/tbl_color')
 var tbl_category = require('../models/tbl_category')
 var tbl_shipping_address = require('../models/tbl_shipping_address')
-
+var tbl_product_images = require('../models/tbl_product_images')
 
 var userModel = tbl_user(sequelize, Sequelize)
 module.exports['tbl_user'] = userModel
@@ -35,6 +35,9 @@ module.exports['tbl_category'] = categoryModel
 var shippingAddressesModel = tbl_shipping_address(sequelize, Sequelize)
 module.exports['tbl_shipping_address'] = shippingAddressesModel
 
+var productImagesModel = tbl_product_images(sequelize, Sequelize)
+module.exports['tbl_product_images'] = productImagesModel
+
 //Define relationship for all
 productModel.hasMany(orderModel,{foreignKey: 'product_id'})
 orderModel.belongsTo(productModel,{foreignKey: 'product_id'})
@@ -45,6 +48,9 @@ orderModel.belongsTo(userModel,{foreignKey: 'user_id'})
 
 productModel.hasMany(productColorModel,{foreignKey: 'product_id'})
 productColorModel.belongsTo(productModel,{foreignKey: 'product_id'})
+
+productModel.hasMany(productImagesModel,{foreignKey: 'product_id'})
+productImagesModel.belongsTo(productModel,{foreignKey: 'product_id'})
 
 colorModel.hasMany(productColorModel,{foreignKey: 'color_id'})
 productColorModel.belongsTo(colorModel,{foreignKey: 'color_id'})
