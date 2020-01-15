@@ -24,6 +24,10 @@ module.exports = function(sequelize, DataTypes) {
         key: 'id'
       }
     },
+    product_image_id:{
+      type: DataTypes.INTEGER(11),
+      allowNull: false,
+    },
     status: {
       type: DataTypes.ENUM('active','inactive'),
       allowNull: false,

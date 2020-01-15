@@ -23,3 +23,6 @@ global.AccountActivateLink = 'www.google.com'
 global.From = 'lvluplifestyle@gmail.com'
 global.LogoPath = '<img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTlR7nL5vJYWJ6UHqK-b1_BO8XvDi0dlJ2ify_bEtKJl9RuRkaa"</img>'
 global.AppName = 'LVL UP Lifestyle'
+
+global.ProductImagesPath = 'http://localhost:4065/productimages/'
+global.ProductPath = 'http://localhost:4065/products/'

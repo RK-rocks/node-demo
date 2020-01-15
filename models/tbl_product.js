@@ -14,7 +14,11 @@ module.exports = function(sequelize, DataTypes) {
     },
     image: {
       type: DataTypes.STRING(256),
-      allowNull: true
+      allowNull: true,
+      get      : function()  {
+        // 'this' allows you to access attributes of the instance
+        return ProductPath+this.getDataValue('image');
+      },
     },
     description: {
       type: DataTypes.TEXT,

@@ -124,7 +124,24 @@ router.post('/getproductdetailbyid', async function(req, res) {
               }
             }],
             required:false
-          }
+          },
+          {
+            model:Productcolors,
+            attributes:['id','product_image_id'],
+            where:[{
+              is_deleted:{
+                [Op.eq] : 'no'
+              },
+              product_id:{
+                [Op.eq] : product_id
+              }
+            }],
+            required:false,
+            include:[{
+              model:Colors,
+              attributes:['id','color']
+            }]
+          },
         ],
       })
       if(productData.length == 0){
