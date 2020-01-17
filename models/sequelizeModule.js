@@ -10,6 +10,7 @@ var tbl_color = require('../models/tbl_color')
 var tbl_category = require('../models/tbl_category')
 var tbl_shipping_address = require('../models/tbl_shipping_address')
 var tbl_product_images = require('../models/tbl_product_images')
+var tbl_product_ratings = require('../models/tbl_product_ratings')
 
 var userModel = tbl_user(sequelize, Sequelize)
 module.exports['tbl_user'] = userModel
@@ -38,9 +39,15 @@ module.exports['tbl_shipping_address'] = shippingAddressesModel
 var productImagesModel = tbl_product_images(sequelize, Sequelize)
 module.exports['tbl_product_images'] = productImagesModel
 
+var productRatingsModel = tbl_product_ratings(sequelize, Sequelize)
+module.exports['tbl_product_ratings'] = productRatingsModel
+
 //Define relationship for all
 productModel.hasMany(orderModel,{foreignKey: 'product_id'})
 orderModel.belongsTo(productModel,{foreignKey: 'product_id'})
+
+productModel.hasMany(productRatingsModel,{foreignKey: 'product_id'})
+productRatingsModel.belongsTo(productModel,{foreignKey: 'product_id'})
 
 //Define relationship for all
 userModel.hasMany(orderModel,{foreignKey: 'user_id'})

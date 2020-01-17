@@ -10,6 +10,7 @@ const Productcolors = require('../models/sequelizeModule').tbl_product_colors
 const ProductImages = require('../models/sequelizeModule').tbl_product_images
 const Colors = require('../models/sequelizeModule').tbl_color
 const Category = require('../models/sequelizeModule').tbl_category
+const Ratings = require('../models/sequelizeModule').tbl_product_ratings
 const Sequelize = require('sequelize')
 const Op = Sequelize.Op;
 const Joi = require('@hapi/joi');
@@ -105,7 +106,9 @@ router.post('/getproductdetailbyid', async function(req, res) {
       const { product_id } = req.body;
       
       let productData = await Products.findOne({
-        attributes:['id','name','price','features','image'],
+        attributes:['id','name','price','features','image',
+                  [Sequelize.literal(`(SELECT AVG(ratings) FROM tbl_product_ratings where product_id = `+product_id+`)`), 'ratings']
+      ],
         where:[{
           is_deleted:{
             [Op.eq] : 'no'
@@ -167,6 +170,125 @@ router.post('/getproductdetailbyid', async function(req, res) {
     }
   } catch (error) {
     res.status(201).json({
+      message:error.message,
+      data:{},
+      status:0
+    })
+  }
+})
+
+//ratting products
+router.post('/productsratting', async function(req, res) {
+  try {
+    const schema = Joi.object().keys({
+      user_id:Joi.number().required(),
+      product_id:Joi.number().required(),
+      ratings:Joi.number().required(),
+    });
+    try {
+      const value = await schema.validateAsync({
+        user_id:req.body.user_id,
+        product_id:req.body.product_id,
+        ratings:req.body.ratings
+      });
+      const { product_id,user_id,ratings } = req.body;
+      var productsRatingUser = await Ratings.findOne({
+        where:{
+          product_id : {
+            [Op.eq] : product_id
+          },
+          user_id : {
+            [Op.eq] : user_id
+          }
+        },
+        raw: true,
+      })
+      
+      if(productsRatingUser){
+        try {
+          
+          let updRatings = await Ratings.update(
+            {
+              ratings:ratings
+            },
+            {
+              where: {
+                user_id: {
+                  [Op.eq] : user_id
+                },
+                product_id:{
+                  [Op.eq] : product_id
+                }
+              }}
+          )
+          if(updRatings){
+            try {
+              let averageRattingsProduct = await Ratings.findOne({
+                  attributes : ['id',[Sequelize.literal(`(SELECT AVG(ratings) FROM tbl_product_ratings where product_id = `+product_id+`)`), 'ratings']],
+                  where:{
+                    product_id : {
+                      [Op.eq] : product_id
+                    }
+                  }
+              })
+              res.status(200).json({
+                message:'rattings given successfully',
+                data:{averageRattingsProduct},
+                status:1
+              })
+            } catch (error) {
+              res.status(500).json({
+                message:error.message,
+                data:{},
+                status:0
+              })
+            }
+          }
+        } catch (error) {
+          res.status(500).json({
+            message:error.message,
+            data:{},
+            status:0
+          })
+        }
+      }
+      let addRatings = await Ratings.create({ 
+        user_id:user_id,
+        product_id:product_id,
+        ratings:ratings
+      });
+      if(addRatings){
+        try {
+          let averageRattingsProduct = await Ratings.findOne({
+              attributes : ['id',[Sequelize.literal(`(SELECT AVG(ratings) FROM tbl_product_ratings where product_id = `+product_id+`)`), 'ratings']],
+              where:{
+                product_id : {
+                  [Op.eq] : product_id
+                }
+              }
+          })
+          res.status(200).json({
+            message:'rattings given successfully',
+            data:{averageRattingsProduct},
+            status:1
+          })
+        } catch (error) {
+          res.status(500).json({
+            message:error.message,
+            data:{},
+            status:0
+          })
+        }
+      }
+    } catch (error) {
+      res.status(500).json({
+        message:error.message,
+        data:{},
+        status:0
+      })
+    }    
+  } catch (error) {
+    res.status(500).json({
       message:error.message,
       data:{},
       status:0
