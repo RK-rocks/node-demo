@@ -11,6 +11,7 @@ var tbl_category = require('../models/tbl_category')
 var tbl_shipping_address = require('../models/tbl_shipping_address')
 var tbl_product_images = require('../models/tbl_product_images')
 var tbl_product_ratings = require('../models/tbl_product_ratings')
+var tbl_user_cart = require('../models/tbl_user_cart')
 
 var userModel = tbl_user(sequelize, Sequelize)
 module.exports['tbl_user'] = userModel
@@ -42,6 +43,9 @@ module.exports['tbl_product_images'] = productImagesModel
 var productRatingsModel = tbl_product_ratings(sequelize, Sequelize)
 module.exports['tbl_product_ratings'] = productRatingsModel
 
+var userCartModel = tbl_user_cart(sequelize, Sequelize)
+module.exports['tbl_user_cart'] = userCartModel
+
 //Define relationship for all
 productModel.hasMany(orderModel,{foreignKey: 'product_id'})
 orderModel.belongsTo(productModel,{foreignKey: 'product_id'})
@@ -62,5 +66,11 @@ productImagesModel.belongsTo(productModel,{foreignKey: 'product_id'})
 colorModel.hasMany(productColorModel,{foreignKey: 'color_id'})
 productColorModel.belongsTo(colorModel,{foreignKey: 'color_id'})
 
-userModel.hasMany(shippingAddressesModel,{foreignKey: 'product_id'})
-shippingAddressesModel.belongsTo(userModel,{foreignKey: 'product_id'})
+userModel.hasMany(shippingAddressesModel,{foreignKey: 'user_id'})
+shippingAddressesModel.belongsTo(userModel,{foreignKey: 'user_id'})
+
+userModel.hasMany(userCartModel,{foreignKey: 'user_id'})
+userCartModel.belongsTo(userModel,{foreignKey: 'user_id'})
+
+productModel.hasMany(userCartModel,{foreignKey: 'product_id'})
+userCartModel.belongsTo(productModel,{foreignKey: 'product_id'})

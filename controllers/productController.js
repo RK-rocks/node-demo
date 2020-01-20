@@ -11,6 +11,8 @@ const ProductImages = require('../models/sequelizeModule').tbl_product_images
 const Colors = require('../models/sequelizeModule').tbl_color
 const Category = require('../models/sequelizeModule').tbl_category
 const Ratings = require('../models/sequelizeModule').tbl_product_ratings
+const UserCart = require('../models/sequelizeModule').tbl_user_cart
+
 const Sequelize = require('sequelize')
 const Op = Sequelize.Op;
 const Joi = require('@hapi/joi');
@@ -383,6 +385,77 @@ router.post('/getproductcategories', async function(req, res) {
     }
   } catch (error) {
     res.status(201).json({
+      message:error.message,
+      data:{},
+      status:0
+    })
+  }
+})
+
+//this function is for add cart to products
+router.post('/addtocartproduct', async function(req, res) {
+  try {
+    const schema = Joi.object({
+      user_id:Joi.number().required(),
+      product_id:Joi.number().required(),
+      total_item:Joi.number().required(),
+      product_color_id:Joi.number().required()
+    })
+    try {
+      const value = await schema.validateAsync({
+        user_id:req.body.user_id,
+        product_id:req.body.product_id,
+        total_item:req.body.total_item,
+        product_color_id:req.body.product_color_id
+      });
+      const { user_id,product_id,total_item,product_color_id } = req.body;
+      try {
+        let addToCartRes = await UserCart.create({
+          total_item:total_item,
+          product_color_id:product_color_id,
+          user_id:user_id,
+          total_item:total_item,
+          product_id:product_id
+        })
+        if(addToCartRes){
+          let getTotalItems = await UserCart.findOne({
+            attributes:[[Sequelize.fn('sum', Sequelize.col('total_item')), 'total_item']],
+            where:[{
+              user_id:{
+                [Op.eq] : user_id
+              }
+            }],
+            row:true
+          });
+          console.log('getTotalItems',getTotalItems.total_item)
+          res.status(200).json({
+            message:'Cart updated successfully',
+            data:{total_item:getTotalItems.total_item},
+            status:1
+          })
+        }else{
+          res.status(500).json({
+            message:"Something went wrong",
+            data:{},
+            status:0
+          })  
+        }
+      } catch (error) {
+        res.status(500).json({
+          message:error.message,
+          data:{},
+          status:0
+        })
+      }
+    } catch (error) {
+      res.status(500).json({
+        message:error.message,
+        data:{},
+        status:0
+      })
+    }
+  } catch (error) {
+    res.status(500).json({
       message:error.message,
       data:{},
       status:0

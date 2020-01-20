@@ -28,6 +28,7 @@ const Products = require('../models/sequelizeModule').tbl_product
 const Orders = require('../models/sequelizeModule').tbl_orders
 const Productcolors = require('../models/sequelizeModule').tbl_product_colors
 const ShippingAddresses = require('../models/sequelizeModule').tbl_shipping_address
+const UserCart = require('../models/sequelizeModule').tbl_user_cart
 
 const path = require('path')
 var fs2 = require('fs');
@@ -172,18 +173,21 @@ router.post('/loginwithsocialmedia',async function(req, res, next) {
               email: email,
               login_with:login_with
             });
-            var is_subscribed = user.is_subscribed
           }
+          var is_subscribed = user.is_subscribed
+          var getCartNumbers = await getCartItemNum({ user_id: user.id })
+          console.log('getCartNumbers',getCartNumbers)
           
             // from now on we'll identify the user by the id and the id is the 
             // only personalized value that goes into our token
-            let payload = { id: id };
+            let payload = { id: user.id };
             let token = jwt.sign(payload, jwtOptions.secretOrKey);
             const userData = {
               email:email,
-              user_id:id,
+              user_id:user.id,
               token:token,
-              is_subscribed:is_subscribed
+              is_subscribed:is_subscribed,
+              cart_item_numbers : getCartNumbers.total_item
             }
 
             try {
@@ -624,6 +628,17 @@ const getUser = async obj => {
     }],
   });
 };
+
+const getCartItemNum = async obj => {
+  return await UserCart.findOne({
+    attributes:[[Sequelize.fn('sum', Sequelize.col('total_item')), 'total_item']],
+    where:[{
+      user_id:{
+        [Op.eq] : obj.user_id
+      }
+    }],
+  });
+}
 
 const createUser=async obj =>{
   console.log(obj);
