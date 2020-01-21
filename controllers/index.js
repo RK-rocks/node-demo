@@ -7,6 +7,7 @@ const userController = require('./userController');
 const orderController = require('./orderController')
 const addressController = require('./addressController')
 const productController = require('./productController')
+const cartController = require('./cartController')
 const joi  = require('joi')
 
 var UserModel = require('../models/sequelizeModule').tbl_user
@@ -110,3 +111,4 @@ router.use('/user',userController)
 router.use('/order',orderController)
 router.use('/address',addressController)
 router.use('/product',productController)
+router.use('/cart',cartController)
