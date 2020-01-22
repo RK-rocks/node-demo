@@ -399,23 +399,26 @@ router.post('/addtocartproduct', async function(req, res) {
       user_id:Joi.number().required(),
       product_id:Joi.number().required(),
       total_item:Joi.number().required(),
-      product_color_id:Joi.number().required()
+      product_color_id:Joi.number().required(),
+      product_image_id:Joi.number().required(),
     })
     try {
       const value = await schema.validateAsync({
         user_id:req.body.user_id,
         product_id:req.body.product_id,
         total_item:req.body.total_item,
-        product_color_id:req.body.product_color_id
+        product_color_id:req.body.product_color_id,
+        product_image_id:req.body.product_image_id,
       });
-      const { user_id,product_id,total_item,product_color_id } = req.body;
+      const { user_id,product_id,total_item,product_color_id,product_image_id } = req.body;
       try {
         let addToCartRes = await UserCart.create({
           total_item:total_item,
           product_color_id:product_color_id,
           user_id:user_id,
           total_item:total_item,
-          product_id:product_id
+          product_id:product_id,
+          product_image_id:product_image_id
         })
         if(addToCartRes){
           let getTotalItems = await UserCart.findOne({

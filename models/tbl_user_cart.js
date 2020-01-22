@@ -36,6 +36,14 @@ module.exports = function(sequelize, DataTypes) {
         key: 'id'
       }
     },
+    product_image_id: {
+      type: DataTypes.INTEGER(11),
+      allowNull: false,
+      references: {
+        model: 'tbl_product_images',
+        key: 'id'
+      }
+    },
     createdAt: {
       type: DataTypes.DATE,
       allowNull: false,

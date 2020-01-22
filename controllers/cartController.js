@@ -39,22 +39,24 @@ router.post('/getcartdetails', async function(req, res) {
         include:[
           {
             model:Products,
-            attributes:['id','name','price'],
+            attributes:['id','name','price','description'],
             require:true,
-            include : [
-                {
-                  model:Productcolors,
-                  require:true,
-                  attributes:['id'],
-                  include:[{
-                      model:Colors,
-                      attributes:['color'],
-                      require:true
-                  }]
-                }
-            ],
-            require:true
           },
+          {
+            model:Productcolors,
+            require:true,
+            attributes:['id'],
+            include:[{
+                model:Colors,
+                attributes:['color'],
+                require:true
+            }]
+          },
+          {
+            model:ProductImages,
+            require:true,
+            attributes:['id','image'],
+          }
         ]
       })
       if(cartData.length == 0){

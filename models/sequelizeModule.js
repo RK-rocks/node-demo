@@ -74,3 +74,9 @@ userCartModel.belongsTo(userModel,{foreignKey: 'user_id'})
 
 productModel.hasMany(userCartModel,{foreignKey: 'product_id'})
 userCartModel.belongsTo(productModel,{foreignKey: 'product_id'})
+
+productColorModel.hasMany(userCartModel,{foreignKey: 'product_color_id'})
+userCartModel.belongsTo(productColorModel,{foreignKey: 'product_color_id'})
+
+productImagesModel.hasMany(userCartModel,{foreignKey: 'product_image_id'})
+userCartModel.belongsTo(productImagesModel,{foreignKey: 'product_image_id'})
