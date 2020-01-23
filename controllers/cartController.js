@@ -88,3 +88,182 @@ router.post('/getcartdetails', async function(req, res) {
     })
   }
 })
+
+//this is for remove cart item from cart
+router.post('/removecartitem', async function(req, res) {
+  try {
+    const schema = Joi.object().keys({
+      user_id:Joi.number().required(),
+      cart_id:Joi.number().required(),
+    });
+    try {
+      const value = await schema.validateAsync({
+        user_id:req.body.user_id,
+        cart_id:req.body.cart_id
+      });
+      const { user_id,cart_id } = req.body;
+      try {
+        let cartData = await UserCart.findOne({
+          attributes:['id'],
+          where:[{
+              id: {
+                  [Op.eq] : cart_id
+              }
+          }],
+        })
+        if(cartData.length == 0){
+          res.status(200).json({
+            message:'Cart data not found',
+            data:{},
+            status:0
+          })
+          return
+        }
+        try {
+         //delete cart item from table
+          let resultDetele = UserCart.destroy({
+           where:[{
+             id : {
+               [Op.eq] : cart_id
+             }
+           }]
+          })
+          if(resultDetele){
+
+            let getTotalQuantity = await UserCart.findOne({
+              attributes:[[Sequelize.fn('sum', Sequelize.col('total_item')), 'total_item']],
+              where:[{
+                user_id : {
+                  [Op.eq] : user_id
+                }
+              }]
+            })
+
+            res.status(200).json({
+              message:'Cart item removed successfully',
+              data:{getTotalQuantity},
+              status:1
+            })
+          }
+        } catch (error) {
+          res.status(500).json({
+            message:error.message,
+            data:{},
+            status:0
+          })
+        }
+      } catch (error) {
+        res.status(500).json({
+          message:error.message,
+          data:{},
+          status:0
+        })
+      }
+    } catch(error) {
+      res.status(500).json({
+        message:error.message,
+        data:{},
+        status:0
+      })
+    }
+  } catch(error) {
+    res.status(500).json({
+      message:error.message,
+      data:{},
+      status:0
+    })
+  }
+})
+
+//this function is used for update quantity of cart
+router.post('/updatequantity', async function(req, res){
+  try {
+    const schema = Joi.object().keys({
+      user_id:Joi.number().required(),
+      cart_id:Joi.number().required(),
+      total_item:Joi.number().required(),
+    });
+    try {
+      const value = await schema.validateAsync({
+        user_id:req.body.user_id,
+        cart_id:req.body.cart_id,
+        total_item:req.body.total_item
+      });
+      const { user_id,cart_id,total_item } = req.body;
+      try {
+        let cartData = await UserCart.findOne({
+          attributes:['id'],
+          where:[{
+              id: {
+                  [Op.eq] : cart_id
+              }
+          }],
+        })
+        if(cartData.length == 0){
+          res.status(200).json({
+            message:'Cart data not found',
+            data:{},
+            status:0
+          })
+          return
+        }
+        try {
+          //for update quantity
+          let updCartData = await UserCart.update(
+            {
+              total_item:total_item
+            },
+            {
+              where:[{
+                  id: {
+                      [Op.eq] : cart_id
+                  }
+              }],
+            }
+          )
+          if(updCartData){
+
+            let getTotalQuantity = await UserCart.findOne({
+              attributes:[[Sequelize.fn('sum', Sequelize.col('total_item')), 'total_item']],
+              where:[{
+                user_id : {
+                  [Op.eq] : user_id
+                }
+              }]
+            })
+
+            res.status(200).json({
+              message:'Quantity updated successfully.',
+              data:{getTotalQuantity},
+              status:1
+            })
+          }
+        } catch (error) {
+          res.status(500).json({
+            message:error.message,
+            data:{},
+            status:0
+          })
+        }
+      } catch(error) {
+        res.status(500).json({
+          message:error.message,
+          data:{},
+          status:0
+        })
+      }
+    } catch(error) {
+      res.status(500).json({
+        message:error.message,
+        data:{},
+        status:0
+      })
+    }
+  } catch(error) {
+    res.status(500).json({
+      message:error.message,
+      data:{},
+      status:0
+    })
+  }
+})
