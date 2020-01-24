@@ -422,7 +422,7 @@ router.post('/addtocartproduct', async function(req, res) {
         })
         if(addToCartRes){
           let getTotalItems = await UserCart.findOne({
-            attributes:[[Sequelize.fn('sum', Sequelize.col('total_item')), 'total_item']],
+            attributes:[[Sequelize.fn('count', Sequelize.col('id')), 'total_item']],
             where:[{
               user_id:{
                 [Op.eq] : user_id

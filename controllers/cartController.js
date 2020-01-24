@@ -131,7 +131,7 @@ router.post('/removecartitem', async function(req, res) {
           if(resultDetele){
 
             let getTotalQuantity = await UserCart.findOne({
-              attributes:[[Sequelize.fn('sum', Sequelize.col('total_item')), 'total_item']],
+              attributes:[[Sequelize.fn('count', Sequelize.col('id')), 'total_item']],
               where:[{
                 user_id : {
                   [Op.eq] : user_id
@@ -224,7 +224,7 @@ router.post('/updatequantity', async function(req, res){
           if(updCartData){
 
             let getTotalQuantity = await UserCart.findOne({
-              attributes:[[Sequelize.fn('sum', Sequelize.col('total_item')), 'total_item']],
+              attributes:[[Sequelize.fn('count', Sequelize.col('id')), 'total_item']],
               where:[{
                 user_id : {
                   [Op.eq] : user_id

@@ -631,7 +631,7 @@ const getUser = async obj => {
 
 const getCartItemNum = async obj => {
   return await UserCart.findOne({
-    attributes:[[Sequelize.fn('sum', Sequelize.col('total_item')), 'total_item']],
+    attributes:[[Sequelize.fn('count', Sequelize.col('id')), 'total_item']],
     where:[{
       user_id:{
         [Op.eq] : obj.user_id
@@ -676,11 +676,15 @@ router.post('/login', async function(req, res, next) {
             // only personalized value that goes into our token
             let payload = { id: user.id };
             let token = jwt.sign(payload, jwtOptions.secretOrKey);
+
+            var getCartNumbers = await getCartItemNum({ user_id: user.id })
+
             const userData = {
               email:user.email,
               user_id:user.id,
               token:token,
-              is_subscribed:user.is_subscribed
+              is_subscribed:user.is_subscribed,
+              cart_item_numbers : getCartNumbers.total_item
             }
             res.status(200).json({
               message:"Login successfully.",
