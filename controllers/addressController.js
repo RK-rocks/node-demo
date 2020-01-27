@@ -318,3 +318,73 @@ router.post('/editaddress', async function(req, res) {
     })
   }
 })
+
+//set default address
+router.post('/setdefaultaddress', async function(req, res) {
+  try {
+    const schema = Joi.object({
+      user_id:Joi.number().required(),
+      address_id:Joi.number().required()
+    })
+    try {
+      const value = await schema.validateAsync({user_id:req.body.user_id,address_id:req.body.address_id});
+      const { user_id,address_id } = req.body;
+
+      try {
+        let updData = await ShippingAddresses.update(
+          {
+            is_default: 'yes'
+          },
+          {
+            where: {
+              id: {
+                [Op.eq] : address_id
+              }
+            }}
+        )
+        let updDataNoDefault = await ShippingAddresses.update(
+          {
+            is_default: 'no'
+          },
+          {
+            where: {
+              id: {
+                [Op.not] : address_id
+              }
+            }}
+        )
+        if(updData){
+          res.status(200).json({
+            message:'Address updated successfully.',
+            data:{},
+            status:1
+          })
+        }else{
+          res.status(201).json({
+            message:'Something wrong',
+            data:{},
+            status:0
+          })
+        }
+      } catch (error) {
+        res.status(201).json({
+          message:error.message,
+          data:{},
+          status:0
+        })
+      }
+    } catch (error) {
+      res.status(201).json({
+        message:error.message,
+        data:{},
+        status:0
+      })
+    }
+  } catch (error) {
+    res.status(201).json({
+      message:error.message,
+      data:{},
+      status:0
+    })
+  }
+})
