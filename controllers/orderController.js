@@ -6,6 +6,7 @@ module.exports = router;
 const constant  = require('../assets/constant')
 const Products = require('../models/sequelizeModule').tbl_product
 const Orders = require('../models/sequelizeModule').tbl_orders
+const Colors = require('../models/sequelizeModule').tbl_color
 const Productcolors = require('../models/sequelizeModule').tbl_product_colors
 const Sequelize = require('sequelize')
 const Op = Sequelize.Op;
@@ -30,18 +31,22 @@ router.post('/getorders', async function(req, res) {
                 [Op.eq] : 'no'
               }
             }],
-            include:[
-              {
-                model:Productcolors,
-                attributes:['color'],
-                where:[{
-                  is_deleted:{
-                    [Op.eq] : 'no'
-                  }
-                }]
+          },
+          {
+            model:Productcolors,
+            attributes:['id'],
+            where:[{
+              is_deleted:{
+                [Op.eq] : 'no'
               }
-            ]
-          }
+            }],
+            include:[{
+              model:Colors,
+              attributes:['color'],
+              require:true
+            }],
+            require:true
+          },
         ]
       })
       if(orderData.length == 0){

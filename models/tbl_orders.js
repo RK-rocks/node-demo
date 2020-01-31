@@ -36,8 +36,16 @@ module.exports = function(sequelize, DataTypes) {
         key: 'id'
       }
     },
+    pad_name: {
+      type: DataTypes.TEXT(256),
+      allowNull: true
+    },
     total_item: {
       type: DataTypes.INTEGER(11),
+      allowNull: false
+    },
+    price_total: {
+      type: DataTypes.FLOAT(11),
       allowNull: false
     },
     createdAt: {

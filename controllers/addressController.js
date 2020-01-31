@@ -227,7 +227,7 @@ router.post('/addaddress', async function(req, res) {
       }
       let addAddress = await ShippingAddresses.create({ 
         address:address,
-        default_address:default_address,
+        is_default:default_address,
         user_id:user_id
       });
       if(addAddress){

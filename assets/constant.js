@@ -26,3 +26,4 @@ global.AppName = 'LVL UP Lifestyle'
 
 global.ProductImagesPath = 'http://localhost:4065/productimages/'
 global.ProductPath = 'http://localhost:4065/products/'
+global.ShippingCharge = 15
