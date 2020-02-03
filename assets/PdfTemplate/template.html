@@ -203,8 +203,14 @@ form{
 			<div class="table">
 			  <table>
 				<tr class="tabletitle">
+					<td class="item">
+						<h2>Item Name</h2>
+					  </td>
 				  <td class="item">
 					<h2>Item Description</h2>
+				  </td>
+				  <td class="item">
+					<h2>Color</h2>
 				  </td>
 				  <td class="Rate">
 					  <h2>Rate</h2>
@@ -218,8 +224,14 @@ form{
 				</tr>
 	  
 				<tr class="service">
+					<td class="tableitem">
+						<p class="itemtext">{{item}}</p>
+					  </td>
 				  <td class="tableitem">
-					<p class="itemtext">Communication</p>
+					<p class="itemtext">{{description}}</p>
+				  </td>
+				  <td class="tableitem">
+					<p class="itemtext">{{color}}</p>
 				  </td>
 				  <td class="tableitem">
 					<p class="itemtext">${{rate}}</p>
@@ -235,6 +247,8 @@ form{
 				
 	  
 				<tr class="tabletitle">
+				  <td></td>
+				  <td></td>
 				  <td></td>
 				  <td></td>
 				  <td class="Rate">

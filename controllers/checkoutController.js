@@ -7,7 +7,7 @@ const fs = require("fs");
 const path = require("path");
 const puppeteer = require('puppeteer');
 const handlebars = require("handlebars");
-const createPDF = require('../assets/PdfTemplate/pdf-generator')
+// const createPDF = require('../assets/PdfTemplate/pdf-generator')
 
 const constant  = require('../assets/constant')
 const Products = require('../models/sequelizeModule').tbl_product
@@ -26,6 +26,10 @@ const Op = Sequelize.Op;
 const Joi = require('@hapi/joi');
 var User = require('../models/sequelizeModule').tbl_user
 const ShippingAddresses = require('../models/sequelizeModule').tbl_shipping_address
+const sendMailWithAttachment = require('./commonController').sendMailWithAttachment
+const createPDF = require('./commonController').createPDF
+const EmailTemplate = require('../models/sequelizeModule').tbl_email_template
+
 
 // console.log('stripe',stripe.charges.create)
 //this function is used for update quantity of cart
@@ -99,7 +103,8 @@ router.post('/checkoutcart', async function(req, res){
                 //this is for generate pdf for all invoices
                 //for getting cart details
                 let cartData = await Orders.findOne({
-                  attributes:['id','order_id','total_item','createdAt'],
+                  attributes:['id','order_id','total_item',
+                  [Sequelize.fn('date_format', Sequelize.col('tbl_orders.createdAt'), '%Y-%m-%d'), 'createdAt']],
                   where:[{
                     id: {
                       [Op.eq] : addOrder.id
@@ -108,7 +113,7 @@ router.post('/checkoutcart', async function(req, res){
                   include:[
                     {
                     model:Products,
-                    attributes:['id','name','price','description'],
+                    attributes:['id','name','price','description','image'],
                     require:true,
                     },
                     {
@@ -134,50 +139,91 @@ router.post('/checkoutcart', async function(req, res){
                     }]
                     }
                   ]
-                  })
-                //   console.log(cartData)
+                })
+                  console.log(cartData)
                   if(cartData){
                   let totalItem = cartData.total_item
                   let createdAt = cartData.createdAt
                   let order_id = cartData.order_id
                   let productPrice = cartData.tbl_product.price
+                  let productName = cartData.tbl_product.name
+                  let productImage = cartData.tbl_product.image
                   let total = totalItem * productPrice
                   let first_name = cartData.tbl_user.first_name
                   let last_name = cartData.tbl_user.last_name
                   let email = cartData.tbl_user.email
                   let address = cartData.tbl_user.tbl_shipping_addresses.address
+                  let color = cartData.tbl_product_color.tbl_color.color
                   var milis = new Date();
 			            milis = milis.getTime();
                   const data = {
                     totalItem:totalItem,
                     createdAt:createdAt,
                     description: cartData.tbl_product.description,
+                    item:productName,
                     rate:productPrice,
                     order_id: order_id,
                     name: first_name+last_name,
                     email: email,
                     address: address,
                     total:total,
-                    milis:milis
+                    milis:milis,
+                    color:color,
+                    image:productImage
                   }
-                  let obj = new createPDF(data)
-                  let updatePdfName = await Orders.update(
-                    {
-                      pad_name: `${data.name}-${data.milis}.pdf`
-                    },
-                    {
-                      where: {
-                        id: {
-                          [Op.eq] : addOrder.id
+                  let obj = await createPDF(data)
+                  if(obj){
+                    let subject = 'Pdf attachment'
+                    try {
+                      // console.log("ljbjbjkbb")
+                      // console.log(EmailTemplate)
+                      let pathAttachmnt = path.join('assets/PdfTemplate/pdf', `${data.name}-${data.milis}.pdf`);
+                      let html = await EmailTemplate.findOne({
+                        where:{
+                          id : {
+                            [Op.eq]:2
+                          }
                         }
+                      })
+                      let emailBody = html.html.toString()
+                      var body = emailBody.replace('{EMAIL}',data.email)
+                      const sendMailr = await sendMailWithAttachment(data.email,body,subject,pathAttachmnt)
+                      console.log(sendMailr);
+                      if(sendMailr){
+                        // console.log(sendMailr)
+                        let updatePdfName = await Orders.update(
+                          {
+                            pad_name: `${data.name}-${data.milis}.pdf`
+                          },
+                          {
+                            where: {
+                              id: {
+                                [Op.eq] : addOrder.id
+                              }
+                            }
+                        })
+                      }else{
+                        res.status(201).json({
+                          message:error.message,
+                          data:{},
+                          status:0
+                        })
+                        return
                       }
-                  })
+                    }catch(error){
+                      res.status(500).json({
+                        message:error.message,
+                        data:{},
+                        status:0
+                      })
+                    }
+                  }
                 }
 
                 return o;
               })
               // console.log('allTotal',allTotal)
-              console.log('token',token)
+              // console.log('token',token)
               let orderId = randtoken.generate(4);
               // `source` is obtained with Stripe.js; see https://stripe.com/docs/payments/accept-a-payment-charges#web-create-token
               await stripe.charges.create({
@@ -199,7 +245,7 @@ router.post('/checkoutcart', async function(req, res){
                 },
                 async function(err, charge) {
                   
-                  console.log(charge)
+                  // console.log(charge)
                   try {
                     let resultDetele = UserCart.destroy({
                       where:[{
