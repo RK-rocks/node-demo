@@ -21,7 +21,8 @@ router.post('/getorders', async function(req, res) {
       const value = await schema.validateAsync({user_id:req.body.user_id});
       const { user_id } = req.body;
       let orderData = await Orders.findAll({
-        attributes:['id','order_id','total_item','createdAt'],
+        attributes:['id','order_id','status','total_item','createdAt'],
+        order:[['id','desc']],
         include:[
           {
             model:Products,

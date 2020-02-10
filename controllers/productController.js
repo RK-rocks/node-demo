@@ -412,15 +412,54 @@ router.post('/addtocartproduct', async function(req, res) {
       });
       const { user_id,product_id,total_item,product_color_id,product_image_id } = req.body;
       try {
-        let addToCartRes = await UserCart.create({
-          total_item:total_item,
-          product_color_id:product_color_id,
-          user_id:user_id,
-          total_item:total_item,
-          product_id:product_id,
-          product_image_id:product_image_id
+        let getCartDetails = await UserCart.findOne({
+          attributes:['id','total_item'],
+          where:[
+            {
+              user_id:{
+                [Op.eq]:user_id
+              }
+            },
+            {
+              product_id:{
+                [Op.eq]:product_id
+              }
+            },
+            {
+              product_image_id:{
+                [Op.eq]:product_image_id
+              }
+            }
+          ]
         })
-        if(addToCartRes){
+        console.log('getCartDetails',getCartDetails)
+        if(getCartDetails){
+          let itemAddedNumber = getCartDetails.total_item
+          let updatedItem = parseInt(itemAddedNumber) + total_item
+          // console.log(updatedItem)
+          // return
+          let updCartData = await UserCart.update({
+            total_item: updatedItem
+          },
+          {
+            where: [
+              {
+                user_id:{
+                  [Op.eq]:user_id
+                }
+              },
+              {
+                product_id:{
+                  [Op.eq]:product_id
+                }
+              },
+              {
+                product_image_id:{
+                  [Op.eq]:product_image_id
+                }
+              }
+            ]
+          })
           let getTotalItems = await UserCart.findOne({
             attributes:[[Sequelize.fn('count', Sequelize.col('id')), 'total_item']],
             where:[{
@@ -433,16 +472,74 @@ router.post('/addtocartproduct', async function(req, res) {
           console.log('getTotalItems',getTotalItems.total_item)
           res.status(200).json({
             message:'Cart updated successfully',
-            data:{total_item:getTotalItems.total_item},
+            data:{total_item:getTotalItems.total_item,is_item_repeted:'yes'},
             status:1
           })
         }else{
-          res.status(500).json({
-            message:"Something went wrong",
-            data:{},
-            status:0
-          })  
+            let addToCartRes = await UserCart.create({
+              total_item:total_item,
+              product_color_id:product_color_id,
+              user_id:user_id,
+              total_item:total_item,
+              product_id:product_id,
+              product_image_id:product_image_id
+            })
+            if(addToCartRes){
+              let getTotalItems = await UserCart.findOne({
+                attributes:[[Sequelize.fn('count', Sequelize.col('id')), 'total_item']],
+                where:[{
+                  user_id:{
+                    [Op.eq] : user_id
+                  }
+                }],
+                row:true
+              });
+              console.log('getTotalItems',getTotalItems.total_item)
+              res.status(200).json({
+                message:'Cart updated successfully',
+                data:{total_item:getTotalItems.total_item,is_item_repeted:'no'},
+                status:1
+              })
+            }else{
+              res.status(500).json({
+                message:"Something went wrong",
+                data:{},
+                status:0
+              })  
+            }
+          console.log("not getting data")
         }
+        // let addToCartRes = await UserCart.create({
+        //   total_item:total_item,
+        //   product_color_id:product_color_id,
+        //   user_id:user_id,
+        //   total_item:total_item,
+        //   product_id:product_id,
+        //   product_image_id:product_image_id
+        // })
+        // if(addToCartRes){
+        //   let getTotalItems = await UserCart.findOne({
+        //     attributes:[[Sequelize.fn('count', Sequelize.col('id')), 'total_item']],
+        //     where:[{
+        //       user_id:{
+        //         [Op.eq] : user_id
+        //       }
+        //     }],
+        //     row:true
+        //   });
+        //   console.log('getTotalItems',getTotalItems.total_item)
+        //   res.status(200).json({
+        //     message:'Cart updated successfully',
+        //     data:{total_item:getTotalItems.total_item},
+        //     status:1
+        //   })
+        // }else{
+        //   res.status(500).json({
+        //     message:"Something went wrong",
+        //     data:{},
+        //     status:0
+        //   })  
+        // }
       } catch (error) {
         res.status(500).json({
           message:error.message,
